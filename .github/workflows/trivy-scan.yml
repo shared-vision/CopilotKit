@@ -1,0 +1,23 @@
+name: Trivy Scan
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          security-checks: vuln,config,secret,license
+          ignore-unfixed: true
+          format: table
+          exit-code: 1
+
