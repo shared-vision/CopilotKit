@@ -1,0 +1,55 @@
+name: Notify Prod Releases in Slack
+# rollout-tag: prod-slack-rollout-20260406d
+# Managed by scripts/automation-slack
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - prod
+      - production
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  notify-slack:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack notification
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_PROD_RELEASES_WEBHOOK_URL }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          MERGED_BY: ${{ github.event.pull_request.merged_by.login }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "${SLACK_WEBHOOK_URL}" ]; then
+            echo "SLACK_PROD_RELEASES_WEBHOOK_URL is not configured."
+            exit 1
+          fi
+
+          payload=$(python3 - <<'PY'
+          import json
+          import os
+
+          text = (
+              f":rocket: *Production PR merged* in `{os.environ['REPO']}`\n"
+              f"• *Title:* {os.environ['PR_TITLE']}\n"
+              f"• *Author:* {os.environ['PR_AUTHOR']}\n"
+              f"• *Merged by:* {os.environ['MERGED_BY']}\n"
+              f"• *PR:* {os.environ['PR_URL']}\n"
+              "• *Channel:* #prod-releases"
+          )
+
+          print(json.dumps({"text": text}))
+          PY
+          )
+
+          curl -sS -X POST \
+            -H "Content-type: application/json" \
+            --data "${payload}" \
+            "${SLACK_WEBHOOK_URL}"
