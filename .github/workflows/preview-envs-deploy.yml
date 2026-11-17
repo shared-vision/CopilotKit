@@ -12,7 +12,7 @@ concurrency:
 jobs:
   build_images:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'automated-version-pr') }}
-    runs-on: ubuntu-latest
+    runs-on: adzen-${{ github.event_name != 'pull_request' && contains(fromJSON('["stg","prod"]'), inputs.environment || github.ref_name) && (inputs.environment || github.ref_name) || 'dev' }}
     name: Build Images
     strategy:
       matrix:
@@ -200,7 +200,7 @@ jobs:
           DOCKER_BUILDKIT: 1
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: adzen-${{ github.event_name != 'pull_request' && contains(fromJSON('["stg","prod"]'), inputs.environment || github.ref_name) && (inputs.environment || github.ref_name) || 'dev' }}
     name: Deploy Preview Environments
     needs: build_images
     outputs:

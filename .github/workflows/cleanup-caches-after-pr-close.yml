@@ -6,7 +6,7 @@ on:
 
 jobs:
   cleanup:
-    runs-on: ubuntu-latest
+    runs-on: adzen-${{ github.event_name != 'pull_request' && contains(fromJSON('["stg","prod"]'), inputs.environment || github.ref_name) && (inputs.environment || github.ref_name) || 'dev' }}
     steps:
       - name: Cleanup
         run: |
